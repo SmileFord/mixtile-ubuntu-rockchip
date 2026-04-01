@@ -29,7 +29,7 @@ For a short step-by-step guide, see the wiki page: [Flashing Images](https://git
 
 ## Boot the System
 
-Insert your SD card into the slot on the board and power on the device. The first boot may take up to two minutes, so please be patient.
+After flashing is complete, disconnect the board from the host computer and power it on normally. The first boot may take up to two minutes, so please be patient.
 
 ## Login Information
 
