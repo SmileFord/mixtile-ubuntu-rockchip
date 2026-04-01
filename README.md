@@ -22,7 +22,7 @@ The recommended flashing method is [rockchip-flash-tool](https://github.com/mixt
 1. Download the correct `*.img.xz` image for your board from the latest release.
 2. Extract the archive and keep the resulting `*.img` file.
 3. Install and open `rockchip-flash-tool` on your host computer.
-4. Connect the board and put it into the required flashing mode for that board.
+4. Connect the board and put it into MaskROM mode using the board's hardware method.
 5. Select the extracted `*.img` file in the tool and start flashing.
 
 For a short step-by-step guide, see the wiki page: [Flashing Images](https://github.com/mixtile-rockchip/mixtile-ubuntu-rockchip/wiki/Flashing-Images).
