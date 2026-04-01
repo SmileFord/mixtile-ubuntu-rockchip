@@ -33,7 +33,7 @@ After flashing is complete, disconnect the board from the host computer and powe
 
 ## Login Information
 
-For Ubuntu Server you will be able to login through HDMI, a serial console connection, or SSH. The predefined user is `ubuntu` and the password is `ubuntu`.
+For Ubuntu Server you will be able to login through HDMI, a serial console connection, or SSH. The predefined user is `mixtile` and the password is `mixtile`.
 
 For Ubuntu Desktop you must connect through HDMI and follow the setup-wizard.
 
