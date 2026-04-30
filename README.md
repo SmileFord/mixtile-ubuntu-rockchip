@@ -15,17 +15,25 @@ Ubuntu Rockchip is a community project porting Ubuntu to Rockchip hardware with 
 
 ## Installation
 
-Make sure you use a good, reliable, and fast SD card. For example, suppose you encounter boot or stability troubles. Most of the time, this is due to either an insufficient power supply or related to your SD card (bad card, bad card reader, something went wrong when burning the image, or the card is too slow).
+Download the Ubuntu image for your specific board from the latest [release](https://github.com/mixtile-rockchip/mixtile-ubuntu-rockchip/releases). Use the board-specific `*.img.xz` asset published with each release, then extract it to a plain `*.img` file before flashing.
 
-Download the Ubuntu image for your specific board from the latest [release](https://github.com/Joshua-Riek/ubuntu-rockchip/releases) on GitHub or from the dedicated download [website](https://joshua-riek.github.io/ubuntu-rockchip-download/). Then write the xz compressed image (no previous unpacking necessary) to your SD card using [USBimager](https://bztsrc.gitlab.io/usbimager/) or [balenaEtcher](https://www.balena.io/etcher) since, unlike other tools, these can validate burning results, saving you from corrupted SD card contents.
+The recommended flashing method is [rockchip-flash-tool](https://github.com/mixtile-rockchip/rockchip-flash-tool):
+
+1. Download the correct `*.img.xz` image for your board from the latest release.
+2. Extract the archive and keep the resulting `*.img` file.
+3. Install and open `rockchip-flash-tool` on your host computer.
+4. Connect the board and put it into MaskROM mode using the board's hardware method.
+5. Select the extracted `*.img` file in the tool and start flashing.
+
+For a short step-by-step guide, see the wiki page: [Flashing Images](https://github.com/mixtile-rockchip/mixtile-ubuntu-rockchip/wiki/Flashing-Images).
 
 ## Boot the System
 
-Insert your SD card into the slot on the board and power on the device. The first boot may take up to two minutes, so please be patient.
+After flashing is complete, disconnect the board from the host computer and power it on normally. The first boot may take up to two minutes, so please be patient.
 
 ## Login Information
 
-For Ubuntu Server you will be able to login through HDMI, a serial console connection, or SSH. The predefined user is `ubuntu` and the password is `ubuntu`.
+For Ubuntu Server you will be able to login through HDMI, a serial console connection, or SSH. The predefined user is `mixtile` and the password is `mixtile`.
 
 For Ubuntu Desktop you must connect through HDMI and follow the setup-wizard.
 
