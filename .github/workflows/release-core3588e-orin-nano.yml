@@ -1,0 +1,223 @@
+name: Release Core3588E Orin Nano
+run-name: Release Core3588E Orin Nano
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Optional tag override, defaults to date-based version
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  prepare_release:
+    name: Create release
+    runs-on: ubuntu-22.04
+    outputs:
+      release_id: ${{ steps.release.outputs.id }}
+      tag_name: ${{ steps.tag.outputs.tag_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Resolve tag name
+        id: tag
+        shell: bash
+        env:
+          TZ: Asia/Shanghai
+        run: |
+          tag_name='${{ inputs.tag_name }}'
+          if [ -z "${tag_name}" ]; then
+            base_tag="v$(date +%Y.%m.%d)"
+            tag_name="${base_tag}"
+          fi
+          echo "tag_name=${tag_name}" >> "$GITHUB_OUTPUT"
+
+      - name: Create empty release
+        id: release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.tag_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target_commitish: ${{ github.sha }}
+          draft: true
+
+  config:
+    runs-on: ubuntu-22.04
+    outputs:
+      build_matrix: ${{ steps.build.outputs.build_matrix }}
+      rootfs_matrix: ${{ steps.rootfs.outputs.rootfs_matrix }}
+    steps:
+      - name: Create build matrix (fixed)
+        id: build
+        run: |
+          echo 'build_matrix={"include":[{"board":"mixtile-core3588e","suite":"noble","flavor":"desktop"}]}' >> "$GITHUB_OUTPUT"
+
+      - name: Create rootfs matrix (fixed)
+        id: rootfs
+        run: |
+          echo 'rootfs_matrix={"include":[{"suite":"noble","flavor":"desktop"}]}' >> "$GITHUB_OUTPUT"
+
+  kernel:
+    runs-on: ubuntu-22.04
+    name: Build kernel
+    needs: [config]
+    strategy:
+      matrix: ${{ fromJson(needs.config.outputs.rootfs_matrix) }}
+    steps:
+      - name: Get more disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        id: vars
+        run: |
+          source config/suites/${{ matrix.suite }}.sh
+          echo "suite_version=$RELASE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          sudo apt-get update && sudo apt-get upgrade -y
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu bison \
+          qemu-user-static qemu-system-arm qemu-efi u-boot-tools binfmt-support \
+          debootstrap flex libssl-dev bc rsync kmod cpio xz-utils fakeroot parted \
+          udev dosfstools uuid-runtime git-lfs device-tree-compiler python2 python3 \
+          python-is-python3 fdisk bc debhelper python3-pyelftools python3-setuptools \
+          python3-distutils python3-pkg-resources swig libfdt-dev libpython3-dev dctrl-tools libelf-dev dwarves
+
+      - name: Build
+        shell: bash
+        run: sudo -E ./build.sh --board=mixtile-core3588e --suite=${{ matrix.suite }} --flavor=${{ matrix.flavor }} --kernel-only
+
+      - name: Upload
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: ubuntu-${{ steps.vars.outputs.suite_version }}-preinstalled-${{ matrix.flavor }}-linux-packages
+          path: ./build/linux-*.deb
+          if-no-files-found: error
+
+  rootfs:
+    runs-on: ubuntu-22.04
+    name: Build rootfs
+    needs: [prepare_release, config]
+    strategy:
+      matrix: ${{ fromJson(needs.config.outputs.rootfs_matrix) }}
+    steps:
+      - name: Get more disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        id: vars
+        run: |
+          source config/suites/${{ matrix.suite }}.sh
+          echo "suite_version=$RELASE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          sudo apt-get update && sudo apt-get upgrade -y
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu bison \
+          qemu-user-static qemu-system-arm qemu-efi u-boot-tools binfmt-support \
+          debootstrap flex libssl-dev bc rsync kmod cpio xz-utils fakeroot parted \
+          udev dosfstools uuid-runtime git-lfs device-tree-compiler python2 python3 \
+          python-is-python3 fdisk bc debhelper python3-pyelftools python3-setuptools \
+          python3-distutils python3-pkg-resources swig libfdt-dev libpython3-dev dctrl-tools libelf-dev dwarves
+
+      - name: Build
+        shell: bash
+        run: sudo -E ./build.sh --suite=${{ matrix.suite }} --flavor=${{ matrix.flavor }} --rootfs-only
+
+      - name: Upload
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: ubuntu-${{ steps.vars.outputs.suite_version }}-preinstalled-${{ matrix.flavor }}-arm64-rootfs
+          path: ./build/ubuntu-${{ steps.vars.outputs.suite_version }}-preinstalled-${{ matrix.flavor }}-arm64.rootfs.tar.xz
+          if-no-files-found: error
+
+  build:
+    runs-on: ubuntu-22.04
+    needs: [rootfs, kernel, prepare_release, config]
+    name: Build image
+    strategy:
+      matrix: ${{ fromJson(needs.config.outputs.build_matrix) }}
+    steps:
+      - name: Get more disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        id: vars
+        run: |
+          source config/suites/${{ matrix.suite }}.sh
+          echo "suite_version=$RELASE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout rootfs
+        uses: actions/download-artifact@v4.1.2
+        with:
+          name: ubuntu-${{ steps.vars.outputs.suite_version }}-preinstalled-${{ matrix.flavor }}-arm64-rootfs
+          path: ./build/
+
+      - name: Checkout kernel
+        uses: actions/download-artifact@v4.1.2
+        with:
+          name: ubuntu-${{ steps.vars.outputs.suite_version }}-preinstalled-${{ matrix.flavor }}-linux-packages
+          path: ./build/
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          sudo apt-get update && sudo apt-get upgrade -y
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu bison \
+          qemu-user-static qemu-system-arm qemu-efi u-boot-tools binfmt-support \
+          debootstrap flex libssl-dev bc rsync kmod cpio xz-utils fakeroot parted \
+          udev dosfstools uuid-runtime git-lfs device-tree-compiler python2 python3 \
+          python-is-python3 fdisk bc debhelper python3-pyelftools python3-setuptools \
+          python3-distutils python3-pkg-resources swig libfdt-dev libpython3-dev dctrl-tools libelf-dev dwarves
+
+      - name: Build
+        shell: bash
+        run: sudo -E ./build.sh --board=${{ matrix.board }} --suite=${{ matrix.suite }} --flavor=${{ matrix.flavor }}
+
+      - name: Upload
+        if: needs.prepare_release.outputs.release_id != ''
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ needs.prepare_release.outputs.release_id }}
+          file: images/ubuntu-*-preinstalled-*-arm64-${{ matrix.board }}.*
+          draft: true
+          overwrite: true

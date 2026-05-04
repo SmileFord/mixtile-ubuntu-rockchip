@@ -1,0 +1,110 @@
+From 9f3c39b6b9e6a5e41d39f7d25e3d9df1e7b4aa01 Mon Sep 17 00:00:00 2001
+From: Codex <codex@local>
+Date: Mon, 4 May 2026 14:55:00 +0800
+Subject: [PATCH] board: rockchip: add Mixtile Core3588E v2 nano default dtb
+
+Keep core3588e behavior unchanged while selecting v2-nano kernel dtb
+by default through CONFIG_DEFAULT_DEVICE_TREE.
+---
+ arch/arm/dts/rk3588-mixtile-core3588e-v2-nano.dts | 76 +++++++++++++++++++++
+ configs/mixtile-core3588e-rk3588_defconfig         |  2 +-
+ 2 files changed, 77 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/dts/rk3588-mixtile-core3588e-v2-nano.dts
+
+diff --git a/arch/arm/dts/rk3588-mixtile-core3588e-v2-nano.dts b/arch/arm/dts/rk3588-mixtile-core3588e-v2-nano.dts
+new file mode 100644
+index 00000000000..11111111111
+--- /dev/null
++++ b/arch/arm/dts/rk3588-mixtile-core3588e-v2-nano.dts
+@@ -0,0 +1,76 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (c) 2021 Rockchip Electronics Co., Ltd
++ *
++ */
++
++/dts-v1/;
++#include "rk3588.dtsi"
++#include "rk3588-u-boot.dtsi"
++#include <dt-bindings/input/input.h>
++
++/ {
++	model = "Mixtile Core 3588E v2 Nano";
++	compatible = "mixtile,core3588e-v2-nano", "mixtile,core3588e", "rockchip,rk3588";
++
++	vcc12v_dcin: vcc12v-dcin {
++		u-boot,dm-pre-reloc;
++		compatible = "regulator-fixed";
++		regulator-name = "vcc12v_dcin";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <12000000>;
++		regulator-max-microvolt = <12000000>;
++	};
++
++	vcc5v0_sys: vcc5v0-sys {
++		u-boot,dm-pre-reloc;
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0_sys";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&vcc12v_dcin>;
++	};
++
++	adc-keys {
++		compatible = "adc-keys";
++		io-channels = <&saradc 1>;
++		io-channel-names = "buttons";
++		keyup-threshold-microvolt = <1800000>;
++		u-boot,dm-pre-reloc;
++		status = "okay";
++
++		volumeup-key {
++			u-boot,dm-pre-reloc;
++			linux,code = <KEY_VOLUMEUP>;
++			label = "volume up";
++			press-threshold-microvolt = <1750>;
++		};
++	};
++};
++
++&u2phy0 {
++	status = "okay";
++};
++
++&u2phy0_otg {
++	status = "okay";
++};
++
++&uart2 {
++	/delete-property/ clocks;
++	/delete-property/ clock-names;
++	u-boot,dm-pre-reloc;
++	clock-frequency = <24000000>;
++};
++
++&pcfg_pull_up {
++	u-boot,dm-pre-reloc;
++};
++
++&uart2m0_xfer {
++	u-boot,dm-spl;
++	u-boot,dm-pre-reloc;
++};
+diff --git a/configs/mixtile-core3588e-rk3588_defconfig b/configs/mixtile-core3588e-rk3588_defconfig
+index e455b0b5dca..ba75e8a26b3 100644
+--- a/configs/mixtile-core3588e-rk3588_defconfig
++++ b/configs/mixtile-core3588e-rk3588_defconfig
+@@ -22,7 +22,7 @@ CONFIG_TARGET_EVB_RK3588=y
+ CONFIG_SPL_LIBDISK_SUPPORT=y
+ CONFIG_SPL_SPI_FLASH_SUPPORT=y
+ CONFIG_SPL_SPI_SUPPORT=y
+-CONFIG_DEFAULT_DEVICE_TREE="rk3588-mixtile-core3588e"
++CONFIG_DEFAULT_DEVICE_TREE="rk3588-mixtile-core3588e-v2-nano"
+ CONFIG_DEBUG_UART=y
+ CONFIG_FIT=y
+ CONFIG_FIT_IMAGE_POST_PROCESS=y
+-- 
+2.43.0
