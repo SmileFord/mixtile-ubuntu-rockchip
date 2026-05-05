@@ -24,8 +24,6 @@ function config_image_hook__mixtile-core3588e() {
         # Install libmali blobs alongside panfork
         chroot "${rootfs}" apt-get -y install libmali-g610-x11
 
-        # Install the rockchip camera engine
-        chroot "${rootfs}" apt-get -y install camera-engine-rkaiq-rk3588
     fi
 
      if [ "${suite}" == "noble" ]; then
@@ -33,8 +31,6 @@ function config_image_hook__mixtile-core3588e() {
 	cp -r ../packages/libmali/libmali-valhall-g610-g24p0-x11-wayland-gbm_1.9-1_arm64.deb ${rootfs}/tmp
 	chroot "${rootfs}" apt install -y /tmp/libmali-valhall-g610-g24p0-x11-wayland-gbm_1.9-1_arm64.deb
 	
-	# Install the rockchip camera engine
-	chroot "${rootfs}" apt-get -y install camera-engine-rkaiq-rk3588
     fi
 
     cp ${overlay_dir}/usr/bin/vendor_storage ${rootfs}/usr/bin/vendor_storage
